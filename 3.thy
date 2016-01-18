@@ -176,7 +176,7 @@ lemma "evala (substa s a) env = evala a (\<lambda>x. evala (s x) env) \<and>
   (* "normb (Less a1 a2) at ae = IF (Less (norma a1) (norma a2)) (norma at) (norma ae)" | *)
   (* "normb (And b1 b2) at ae = (normb b1 (IF (normb b2 at ae))   (norma ae))" | *)
   (* "normb (Neg b) at ae = IF b (norma at) (norma at)" *)
-  
+
 
 datatype ('v, 'f)"term" = Var 'v | App 'f "('v, 'f)term list"
 
@@ -187,12 +187,41 @@ where
   "subst s (Var x) = s x" |
   subst_App:
   "subst s (App f ts) = App f (substs s ts)" |
+
   "substs s [] = []" |
   "substs s (t#ts) = subst s t # substs s ts"
 
-lemma subst_id "subst  Var t  = (t ::('v, 'f)term) \<and>
-                substs Var ts = (ts::('v, 'f)term list)"
-  apply(induct_tac t and ts rule: subst.induct substs.induct, simp_all)
+
+
+lemma subst_id: "subst  Var t  = (t ::('v, 'f)term) \<and>
+  substs Var ts = (ts::('v, 'f)term list)"
+  apply(induct_tac t and ts, simp_all)
+  done
+
+lemma "subst (Var \<circ> f \<circ> g) t = subst (Var \<circ> f) (subst (Var \<circ> g) t)"
+  apply(induct_tac t)
+  apply simp
+  apply simp
+  apply simp
+  apply simp
+  done
+
+
+primrec trev:: "('v, 'f) term \<Rightarrow> ('v, 'f) term" and
+  trevs:: "('v, 'f) term list \<Rightarrow> ('v, 'f) term list \<Rightarrow> ('v, 'f) term list"
+  where
+  "trev (Var x) = Var x" |
+  "trev (App f ts) = App f (trevs ts [])" |
+
+  "trevs [] ts' = ts'" |
+  "trevs (t#ts) ts' = trevs ts ((trev t) # ts')"
+
+
+
+lemma "trev (trev t) = (t::('v, 'f)term) \<and>
+  trevs (trevs ts []) [] = (ts:: ('v, 'f) term list)"
+  apply (induct_tac t and ts, simp_all)
+
 
 
 
