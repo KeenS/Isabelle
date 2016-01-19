@@ -218,11 +218,6 @@ primrec trev:: "('v, 'f) term \<Rightarrow> ('v, 'f) term" and
 
 
 
-lemma "trev (trev t) = (t::('v, 'f)term) \<and>
-  trevs (trevs ts []) [] = (ts:: ('v, 'f) term list)"
-  apply (induct_tac t and ts, simp_all)
-
-
 
 
 
