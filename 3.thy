@@ -218,6 +218,22 @@ primrec trev:: "('v, 'f) term \<Rightarrow> ('v, 'f) term" and
 
 
 
+lemma [simp]: "subst s (App f ts) = App f (map (subst s) ts)"
+  apply (induct_tac ts, simp_all)
+  done
+
+declare subst_App [simp del]
+
+datatype ('a, 'i) bigtree = Tip | Br 'a "'i \<Rightarrow> ('a, 'i) bigtree"
+
+primrec map_bt ::"('a \<Rightarrow> 'b) \<Rightarrow> ('a, 'i)bigtree \<Rightarrow> ('b, 'i)bigtree"
+  where
+  "map_bt f Tip = Tip" |
+  "map_bt f (Br a F) = Br (f a) (\<lambda>i. map_bt f (F i))"
+
+lemma "map_bt (g \<circ> f) T = map_bt g (map_bt f T)"
+  apply(induct_tac T, simp_all)
+  done
 
 
 
