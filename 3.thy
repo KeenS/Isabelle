@@ -235,6 +235,122 @@ lemma "map_bt (g \<circ> f) T = map_bt g (map_bt f T)"
   apply(induct_tac T, simp_all)
   done
 
+datatype ('a, 'v)trie = Trie "'v option" "('a * ('a, 'v) trie) list"
+
+primrec "trvalue" :: "('a, 'v)trie \<Rightarrow> 'v option" where
+  "trvalue (Trie ov al) = ov"
+
+primrec tralist :: "('a, 'v)trie \<Rightarrow> ('a * ('a, 'v)trie)list" where 
+  "tralist (Trie ov al) = al"
+
+primrec assoc:: "('key * 'val)list \<Rightarrow> 'key \<Rightarrow> 'val option"
+  where
+  "assoc [] x = None" |
+  "assoc (p#ps) x = (let (a, b) = p in
+                    if a=x then Some b else assoc ps x)"
+
+primrec lookup :: "('a, 'v)trie \<Rightarrow> 'a list \<Rightarrow> 'v option"
+  where
+  "lookup t [] = trvalue t" |
+  "lookup t (a#as) = (case assoc (tralist t) a of
+  None \<Rightarrow> None
+  | Some at \<Rightarrow> lookup at as)"
+
+
+lemma [simp]: "lookup (Trie None []) as = None"
+  apply(induct_tac as, simp_all)
+  done
+
+primrec update :: "('a, 'v)trie \<Rightarrow> 'a list \<Rightarrow> 'v \<Rightarrow> ('a, 'v)trie"
+where
+"update t [] v = Trie (Some v) (tralist t)" |
+"update t (a#as) v = (let tt = (case assoc (tralist t) a of
+  None \<Rightarrow> Trie None [] | Some at \<Rightarrow> at)
+  in Trie (trvalue t) ((a, update tt as v)# tralist t))"
+
+declare Let_def[simp] option.split[split]
+
+theorem "\<forall> t v bs. lookup (update t as v) bs = 
+  (if as = bs then Some v else lookup t bs)"
+  apply (induct_tac as , auto)
+  apply(case_tac[!] bs, auto)
+  done
+
+primrec update2 :: "('a, 'v)trie \<Rightarrow> 'a list \<Rightarrow> 'v option \<Rightarrow> ('a, 'v)trie"
+where
+"update2 t [] v = Trie v (tralist t)" |
+"update2 t (a#as) v = (let tt = (case assoc (tralist t) a of
+  None \<Rightarrow> Trie None [] | Some at \<Rightarrow> at)
+  in Trie (trvalue t) ((a, update2 tt as v)# tralist t))"
+
+theorem "\<forall> t v bs. lookup (update2 t as (Some v)) bs = 
+  (if as = bs then Some v else lookup t bs)"
+  apply (induct_tac as , auto)
+  apply(case_tac[!] bs, auto)
+  done
+
+theorem "\<forall> t v bs. lookup (update2 t as None) bs = 
+  (if as = bs then None else lookup t bs)"
+  apply (induct_tac as , auto)
+  apply(case_tac[!] bs, auto)
+  done
+
+fun fib :: "nat \<Rightarrow> nat "where
+  "fib 0 = 0" |
+  "fib (Suc 0) = 1" |
+  "fib (Suc (Suc x)) = fib x + fib (Suc x)"
+
+fun sep :: "'a \<Rightarrow> 'a list \<Rightarrow> 'a list" where
+  "sep a [] = []" |
+  "sep a [x] = [x]" |
+  "sep a (x#y#zs) = x # a # sep a (y#zs)"
+
+fun last :: "'a list \<Rightarrow> 'a" where
+  "last [x] = x" |
+  "last (_#y#zs) = last (y#zs)"
+
+fun sep1 :: "'a \<Rightarrow> 'a list \<Rightarrow> 'a list" where
+  "sep1 a (x#y#zs) = x # a # sep1 a (y#zs)" |
+  "sep1 _ xs       = xs"
+
+fun swap12 :: "'a list \<Rightarrow> 'a list" where
+  "swap12 (x#y#zs) = y#x#zs" |
+  "swap12 zs       = zs"
+
+thm sep.simps
+
+fun ack2 :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
+  "ack2 n 0 = Suc n" |
+  "ack2 0 (Suc m) = ack2 (Suc 0) m" |
+  "ack2 (Suc n) (Suc m) = ack2 (ack2 n (Suc m)) m"
+
+fun gcd :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
+  "gcd m n = (if n = 0 then m else gcd n (m mod n))"
+
+fun gcd1 :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
+  "gcd1 m 0 = m" | 
+  "gcd1 m n = gcd1 n (m mod n)"
+
+
+fun gcd2 :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
+  "gcd2 m n = (case n = 0 of True \<Rightarrow> m | False \<Rightarrow> gcd2 n (m mod n))"
+
+lemma [simp]: "gcd m 0 = m"
+  apply(simp)
+  done
+
+lemma [simp]: "n \<noteq> 0 \<Longrightarrow> gcd m n = gcd n (m mod n)"
+  apply simp
+  done
+
+declare gcd.simps [simp del]
+
+lemma "map f (sep x xs) = sep (f x) (map f xs)"
+  apply(induct_tac x xs rule: sep.induct)
+  apply (simp_all)
+  done
+
+
 
 
 
